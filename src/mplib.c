@@ -837,7 +837,6 @@ mp_convert_to_v1(id3_tag *tag)
 #endif
 	}
 	else v1->track = 0;
-	xfree(c);
 	mp_free_text_content(tc);
 	mp_free_content(content);
 	
@@ -852,7 +851,6 @@ mp_convert_to_v1(id3_tag *tag)
 		}
 	}
 	if(!c) v1->genre = 0xFF;
-	xfree(c);
 	mp_free_text_content(tc);
 	mp_free_content(content);
 	
