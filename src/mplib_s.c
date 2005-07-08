@@ -1084,7 +1084,7 @@ id3_lseek_syncword_r(int fd, unsigned char *data, int checked)
 	
 	for(i = 0; i + 1 < BUF_SIZE; i++)
 	{
-		if(((data[i] & 0xFF)== 0xFF) && ((data[i+1] & 0xE0)== 0xE0))
+		if(((data[i] & 0xFF)== 0xFF) && (((data[i+1] & 0xF0) == 0xF0) || ((data[i+1] == 0xE0) & 0xE0)))
 		{
 			lseek(fd, checked + i, SEEK_SET);
 			return 0;
