@@ -1,3 +1,12 @@
+v 1.0.2
+	* replaced build scripts with updated version
+
+	* changed license terms to BSD license
+
+	* mplib.c: fixed a minor memory leak
+
+	* mplib_s.c: added new mpeg header syncword
+
 v 1.0
 	* fixed alot of memory leaks and some memory handling bugs causing segfaults
 	
