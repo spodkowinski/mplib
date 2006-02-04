@@ -266,12 +266,34 @@ extern char *mp_get_str_mode __P((const mpeg_header*));
 /* Allocates and fills a list of tags found in the given file. This list
  * will contain at least one and at most two tags or is NULL if no tags
  * have been found.
- *  Arg 1   - The files name/file descriptor to search for tags
+ * This function prepares argument and calls mp_get_tag_list() function.
+ *  Arg 1   - The files name to search for tags
  *  Returns - A pointer to a initialized list struct or null if no tags have
  *            been found
  */
 extern id3_tag_list* mp_get_tag_list_from_file __P((const char*));
-extern id3_tag_list* mp_get_tag_list_from_fd __P((int));
+
+/* Allocates and fills a list of tags found in the given memory buffer. This
+ * list will contain at least one and at most two tags or is NULL if no tags
+ * have been found.
+ * This function prepares argument and calls mp_get_tag_list() function.
+ *  Arg 1   - Pointer to buffer to search for tags
+ *  Arg 2   - Size of the buffer
+ *  Returns - A pointer to a initialized list struct or null if no tags have
+ *            been found
+ */
+extern id3_tag_list* mp_get_tag_list_from_mem __P((void *, size_t));
+
+/* Allocates and fills a list of tags using read and seek wrapper functions
+ *  Arg 1   - Pointer to function that reads
+ *  Arg 2   - Pointer to function that seeks
+ *  Arg 2   - Pointer to argument for read and seek wrapper functions
+ *  Returns - A pointer to a initialized list struct or null if no tags have
+ *            been found
+ */
+extern id3_tag_list* mp_get_tag_list __P((size_t (*read_func)(void *, size_t, void *),
+						off_t (*lseek_func)(off_t, int, void *),
+						void *arg));
 
 
 /* Frees a tag list beginning with the given element XXX */
@@ -432,6 +454,20 @@ extern id3_tag* mp_alloc_tag_with_version __P((int));
 
 /* Frees tag struct */
 extern void mp_free_tag __P((id3_tag *));
+
+
+typedef struct _mem_arg
+{
+	void *buf;
+	size_t size;
+	void *act;
+} mem_arg;
+
+typedef struct _file_arg
+{
+	int fd;
+} file_arg;
+
 
 __END_DECLS
 

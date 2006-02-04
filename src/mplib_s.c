@@ -49,7 +49,9 @@
 /******************************/
 
 static id3v1_tag*
-id3v1_get_tag(int fd)
+id3v1_get_tag(size_t (*read_func)(void *, size_t, void *),
+		off_t (*lseek_func)(off_t, int, void *),
+		void *arg)
 {
 	id3v1_tag *tag;
 	char *c;
@@ -58,43 +60,43 @@ id3v1_get_tag(int fd)
 	
 	c = (char *)xmallocd(3, "id3v1_get_tag:c");
 	
-	if(lseek(fd, -128L, SEEK_END) == -1) goto exit_on_error;
-	if(read(fd, c, 3) < 3) goto exit_on_error;
+	if(lseek_func(-128L, SEEK_END, arg) == -1) goto exit_on_error;
+	if(read_func(c, 3, arg) < 3) goto exit_on_error;
 	if(strncmp(c, "TAG", 3) != 0) goto exit_on_error;
 
 	tag->title = (char *)xmallocd(31, "id3v1_get_tag:tag->title");
-	if(read(fd, tag->title, 30) < 30) goto exit_on_error;
+	if(read_func(tag->title, 30, arg) < 30) goto exit_on_error;
 	if(tag->title[0] == 0 || id3_is_only_space(tag->title, 30)) {
 	    xfree(tag->title);
 	    tag->title = NULL;
 	} else tag->title[30] = 0;
 	
 	tag->artist = (char*)xmallocd(31, "id3v1_get_tag:tag->artist");
-	if(read(fd, tag->artist, 30) < 30) goto exit_on_error;
+	if(read_func(tag->artist, 30, arg) < 30) goto exit_on_error;
 	if(tag->artist[0] == 0 || id3_is_only_space(tag->artist, 30)) {
 	    xfree(tag->artist);
 	    tag->artist = NULL;
 	} else tag->artist[30] = 0;
 	
 	tag->album = (char*)xmallocd(31, "id3v1_get_tag:tag->album");
-	if(read(fd, tag->album, 30) < 30) goto exit_on_error;
+	if(read_func(tag->album, 30, arg) < 30) goto exit_on_error;
 	if(tag->album[0] == 0 || id3_is_only_space(tag->album, 30)) {
 	    xfree(tag->album);
 	    tag->album = NULL;
 	} else tag->album[30] = 0;
 	
 	tag->year = (char*)xmallocd(5, "id3v1_get_tag:tag->year");
-	if(read(fd, tag->year, 4) < 4) goto exit_on_error;
+	if(read_func(tag->year, 4, arg) < 4) goto exit_on_error;
 	if(tag->year[0] == 0 || id3_is_only_space(tag->year, 4)) {
 	    xfree(tag->year);
 	    tag->year = NULL;
 	} else tag->year[4] = 0;
 	
 	tag->comment = (char*)xmallocd(31, "id3v1_get_tag:tag->comment");
-	if(read(fd, tag->comment, 30) < 30) goto exit_on_error;
+	if(read_func(tag->comment, 30, arg) < 30) goto exit_on_error;
 	tag->comment[30] = 0;
 	
-	if(read(fd, &(tag->genre), 1) < 1) goto exit_on_error;
+	if(read_func(&(tag->genre), 1, arg) < 1) goto exit_on_error;
 	
 	/* Looking for v1.1 track info */
 	if(tag->comment && tag->comment[28] == 0 && tag->comment[29] != 0)
@@ -493,10 +495,12 @@ id3v2_del_tag(int fd, id3v2_tag *t)
 	int read;
 	void *ptr;
 	id3v2_tag *tfound = NULL;;
+	file_arg arg;
 	
 	if(!t)
 	{
-	    t = id3v2_get_tag(fd);
+	    arg.fd = fd;
+	    t = id3v2_get_tag(read_file, lseek_file, &arg);
 	    if(!t) return 0;
 	    else tfound = t;
 	}
@@ -604,7 +608,9 @@ id3_is_only_space(char *str, int strlen)
 }
 
 static id3v2_tag*
-id3v2_get_tag(int fd)
+id3v2_get_tag(size_t (*read_func)(void *, size_t, void *),
+		off_t (*lseek_func)(off_t, int, void *),
+		void *arg)
 {
 	unsigned char *c;
 	id3v2_header *header;
@@ -613,11 +619,11 @@ id3v2_get_tag(int fd)
 	id3v2_tag *tag = NULL;
 	int i;
 	
-	if(lseek(fd, 0L, SEEK_SET) == -1) return NULL;
+	if(lseek_func(0L, SEEK_SET, arg) == -1) return NULL;
 	
 	c = (unsigned char*)xmallocd0(1024, "id3v2_get_tag:c");
 	
-	if(read(fd, c, 10) < 10) goto exit_on_error;
+	if(read_func(c, 10, arg) < 10) goto exit_on_error;
 
 	c[10] = 0;
 	
@@ -660,43 +666,43 @@ id3v2_get_tag(int fd)
 		
 		header->extended_header = xt_header;
 		
-		read(fd, c, 4); /* get length of extended header */
+		read_func(c, 4, arg); /* get length of extended header */
 		xt_header->size = id3_unsync32(c, 0);
 		
-		read(fd, c, 1); /* get number of flags */
+		read_func(c, 1, arg); /* get number of flags */
 		xt_header->no_flag_bytes = (c[0] > 0) ? c[0] : 1;
 		
-		read(fd, c, xt_header->no_flag_bytes); /* get flag bytes */
+		read_func(c, xt_header->no_flag_bytes, arg); /* get flag bytes */
 		xt_header->is_update = (c[0] & 64) >> 6;
 		xt_header->crc_data_present = (c[0] & 32) >> 5;
 		xt_header->restrictions = (c[0] & 16) >> 4;
 		
 		/* Flag data */
-		if(xt_header->is_update) read(fd, c, 1); /* Data length ind. is 0 -skip */
+		if(xt_header->is_update) read_func(c, 1, arg); /* Data length ind. is 0 -skip */
 		if(xt_header->crc_data_present) {
-			read(fd, c, 1); /* data length - shoud be 5 */
+			read_func(c, 1, arg); /* data length - shoud be 5 */
 			if(*c != 5) goto exit_on_error; /*  else things might
 			break badly */
 			xt_header->crc_data_length = *c;
 			xt_header->crc_data = xmallocd0(*c, "id3v2_get_tag:xt_header->crc_data");
-			read(fd, xt_header->crc_data, *c);
+			read_func(xt_header->crc_data, *c, arg);
 		}
 		if(xt_header->restrictions) {
-			read(fd, c, 1); /* data length - shoud be 1 */
+			read_func(c, 1, arg); /* data length - shoud be 1 */
 			if(*c != 1) goto exit_on_error;
 			xt_header->restrictions_data_length = *c;
 			xt_header->restrictions_data = xmallocd0(*c,
 						       "id3v2_get_tag:xt_header->restrictions_data");
-			read(fd, xt_header->restrictions_data, *c); 
+			read_func(xt_header->restrictions_data, *c, arg);
 		}
 	}
 
 	/* Read frames */
-	while(lseek(fd, 0L, SEEK_CUR) < header->total_tag_size)
+	while(lseek_func(0L, SEEK_CUR, arg) < header->total_tag_size)
 	{
 		int hasEnc = 0, hasLang = 0, d;
 		
-		read(fd, c, 10); /* Read header */
+		read_func(c, 10, arg); /* Read header */
 		
 		/* break if padding is reached - this should never happen here.. */
 		if(c[0] == 0 && c[1] == 0 && c[2] ==  0 && c[3] == 0) break;
@@ -713,7 +719,7 @@ id3v2_get_tag(int fd)
 		
 		/* Getting frame content */
 		frame->data = xmallocd(frame->data_size, "id3v2_get_tag:frame->data_size");
-		read(fd, frame->data, frame->data_size);
+		read_func(frame->data, frame->data_size, arg);
 		
 		/* Add frame to list */
 		if(frame_list->data)
@@ -1162,9 +1168,12 @@ id3v2_free_tag(id3v2_tag* v2)
 	do
 	{
 		frame = (id3v2_frame*)v2->frame_list->data;
-		if(frame->frame_id) xfree(frame->frame_id);
-		if(frame->data) xfree(frame->data);
-		xfree(v2->frame_list->data);
+		if(frame)
+		{
+			if(frame->frame_id) xfree(frame->frame_id);
+			if(frame->data) xfree(frame->data);
+			xfree(v2->frame_list->data);
+		}
 
 		doomed = v2->frame_list->next;
 		xfree(v2->frame_list);
@@ -1173,3 +1182,68 @@ id3v2_free_tag(id3v2_tag* v2)
 	
 	xfree(v2);
 }
+
+size_t read_mem(void *dest, size_t nbytes, void *varg) {
+	size_t count;
+	mem_arg *arg = (mem_arg *)varg;
+
+	if (arg->act - arg->buf + nbytes <= arg->size) {
+		memcpy(dest, arg->act, nbytes);
+		arg->act += nbytes;
+
+		return nbytes;
+	} else {
+		count = arg->size - (arg->act - arg->buf);
+		memcpy(dest, arg->act, count);
+		return count;
+	}
+}
+
+size_t read_file(void *dest, size_t nbytes, void *varg) {
+	file_arg *arg = (file_arg *)varg;
+
+	return read(arg->fd, dest, nbytes);
+}
+
+off_t lseek_mem(off_t offset, int whence, void *varg) {
+	mem_arg *arg = (mem_arg *)varg;
+	off_t retval;
+	
+	if (!arg->buf) {
+		errno = EBADF;
+		return (off_t)-1;
+	}
+
+	switch (whence) {
+		case SEEK_SET:
+			if (offset >= 0)
+				arg->act = arg->buf + offset;
+			else goto exit_on_error;
+			break;
+		case SEEK_CUR:
+			if (arg->act + offset >= arg->buf)
+				arg->act += offset;
+			else goto exit_on_error;
+			break;
+		case SEEK_END:
+			if (arg->buf + arg->size + offset >= arg->buf)
+				arg->act = arg->buf + arg->size + offset;
+			else goto exit_on_error;
+			break;
+		default:
+			goto exit_on_error;
+	}
+
+	return (arg->act - arg->buf);
+
+exit_on_error:
+	errno = EINVAL;
+	return (off_t)-1;
+}
+
+off_t lseek_file(off_t offset, int whence, void *varg) {
+	file_arg *arg = (file_arg *)varg;
+
+	return lseek(arg->fd, offset, whence);
+}
+

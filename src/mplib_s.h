@@ -90,9 +90,13 @@ const static char *genre_list[GLL] =
 /************************************/
 
 
-/* Gets the v1/v2 tag from a file */
-static id3v1_tag *id3v1_get_tag(int);
-static id3v2_tag *id3v2_get_tag(int);
+/* Gets the v1/v2 tag */
+static id3v1_tag *id3v1_get_tag(size_t (*read_func)(void *, size_t, void *),
+		off_t (*lseek_func)(off_t, int, void *),
+		void *arg);
+static id3v2_tag *id3v2_get_tag(size_t (*read_func)(void *, size_t, void *),
+		off_t (*lseek_func)(off_t, int, void *),
+		void *arg);
 
 /* Adds v1/v2 Tag to file */
 static int id3v1_add_tag(int, id3v1_tag*);
@@ -147,6 +151,13 @@ static id3_tag* id3v2_alloc_tag(void);
 static void id3v1_free_tag(id3v1_tag*);
 static void id3v2_free_tag(id3v2_tag*);
 
+/* read and lseek wrappers for memory */
+size_t read_mem(void *dest, size_t nbytes, void *varg);
+off_t lseek_mem(off_t offset, int whence, void *varg);
+
+/* read and lseek wrappers for files */
+size_t read_file(void *dest, size_t nbytes, void *varg);
+off_t lseek_file(off_t offset, int whence, void *varg);
 
 __END_DECLS
 

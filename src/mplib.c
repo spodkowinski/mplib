@@ -204,23 +204,40 @@ mp_get_str_mode(const mpeg_header *h)
 }
 
 id3_tag_list* 
+mp_get_tag_list_from_mem(void *buf, size_t size)
+{
+	mem_arg arg;
+
+	arg.buf = buf;
+	arg.size = size;
+	arg.act = buf;
+
+	return mp_get_tag_list(read_mem, lseek_mem, &arg);
+}
+
+id3_tag_list* 
 mp_get_tag_list_from_file(const char* filename)
 {
 	id3_tag_list *ret;
 	int fd;
+	file_arg arg;
 	
 	if(!filename) return NULL;
 	
 	fd = open(filename, O_RDONLY);
 	if(fd == -1) return NULL;
 	
-	ret = mp_get_tag_list_from_fd(fd);
+	arg.fd = fd;
+	ret = mp_get_tag_list(read_file, lseek_file, &arg);
 	close(fd);
 	return ret;
+
 }
 
 id3_tag_list* 
-mp_get_tag_list_from_fd(int fd)
+mp_get_tag_list(size_t (*read_func)(void *, size_t, void *),
+		off_t (*lseek_func)(off_t, int, void *),
+		void *arg)
 {
 	id3_tag_list *tag_list = NULL;
 	id3_tag_list *tag_list2 = NULL;
@@ -228,32 +245,32 @@ mp_get_tag_list_from_fd(int fd)
 	id3v1_tag *v1tag = NULL;
 	id3_tag *tag = NULL;
 	
-	v2tag = id3v2_get_tag(fd);
+	v2tag = id3v2_get_tag(read_func, lseek_func, arg);
 	if(v2tag)
 	{
-		tag = XMALLOCD0(id3_tag, "mp_get_tag_list_from_fd:tag");
+		tag = XMALLOCD0(id3_tag, "mp_get_tag_list:tag");
 		if(v2tag->header->version_minor == 3 || v2tag->header->version_minor == 4)
 			tag->version = 2;
 		else
 			tag->version = -1;
 		tag->tag = v2tag;
 			
-		tag_list = XMALLOCD(id3_tag_list, "mp_get_tag_list_from_fd:tag_list");
+		tag_list = XMALLOCD(id3_tag_list, "mp_get_tag_list:tag_list");
 		tag_list->tag = tag;
 		tag_list->next = NULL;
 		tag_list->first = tag_list;
 	}
 	
-	v1tag = id3v1_get_tag(fd);
+	v1tag = id3v1_get_tag(read_func, lseek_func, arg);
 	if(v1tag)
 	{
-		tag = XMALLOCD(id3_tag, "mp_get_tag_list_from_fd:tag");
+		tag = XMALLOCD(id3_tag, "mp_get_tag_list:tag");
 		tag->version = 1;
 		tag->tag = v1tag;
 		
 		if(tag_list)
 		{
-			tag_list2 = XMALLOCD(id3_tag_list, "mp_get_tag_list_from_fd:tag_list2");
+			tag_list2 = XMALLOCD(id3_tag_list, "mp_get_tag_list:tag_list2");
 			tag_list2->tag = tag;
 			tag_list2->next = NULL;
 			tag_list2->first = tag_list;
@@ -261,7 +278,7 @@ mp_get_tag_list_from_fd(int fd)
 		}
 		else
 		{
-			tag_list = XMALLOCD(id3_tag_list, "mp_get_tag_list_from_fd:tag_list");
+			tag_list = XMALLOCD(id3_tag_list, "mp_get_tag_list:tag_list");
 			tag_list->tag = tag;
 			tag_list->next = NULL;
 			tag_list->first = tag_list;
@@ -269,8 +286,9 @@ mp_get_tag_list_from_fd(int fd)
 	}
 	
 	return tag_list;
-}
 
+}
+	
 id3_content*
 mp_get_content(const id3_tag *tag, int field)
 {
@@ -593,6 +611,7 @@ mp_set_custom_content_at_pos(id3_tag* tag, char* field, id3_content* new_content
 	 id3v2_tag *v2;
 	 id3_tag_list *mylist;
 	 int ret = 0;
+	 file_arg arg;
 	 
 	 if(!tag_list) {
 		 ret |= id3v1_del_tag(fd);
@@ -634,7 +653,8 @@ mp_set_custom_content_at_pos(id3_tag* tag, char* field, id3_content* new_content
 			 
 			 /* this is where padding handling takes place */
 			 /* we must get the old tag to see if padding can be used */
-			 old_v2 = id3v2_get_tag(fd);
+			 arg.fd = fd;
+			 old_v2 = id3v2_get_tag(read_file, lseek_file, &arg);
 			 if(old_v2) {
 				 if(v2->header->total_tag_size > old_v2->header->total_tag_size)
 				 {
