@@ -1,6 +1,7 @@
 /*
  * mplib - a library that enables you to edit ID3 tags
- * Copyright (C) 2001,2002  Stefan Podkowinski
+ * Copyright (C) 2001,2002  Stefan Podkowinski,
+ *               2006       Michal Kowalczuk
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
