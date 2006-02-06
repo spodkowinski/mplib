@@ -1,16 +1,15 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/mplib.c)
-AM_INIT_AUTOMAKE(mplib, 1.0.1)
+AM_INIT_AUTOMAKE(mplib, 1.0.2)
 AM_CONFIG_HEADER(config.h)
 	
 dnl Checks for programs.
 AC_ISC_POSIX
 AC_PROG_CC
-AC_PROG_AWK
 
 dnl libraries
-AM_DISABLE_SHARED
-AM_PROG_LIBTOOL
+AC_DISABLE_SHARED
+AC_PROG_LIBTOOL
 
 dnl Checks for header files.
 AC_HEADER_STDC

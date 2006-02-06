@@ -4,7 +4,7 @@
 
   A library for handling ID3 tags
 
-  Written by Stefan Podkowinski, lugburg@netscape.net
+  Written by Stefan Podkowinski, s.podkowinski@gmail.com
 
   Home: http://sourceforge.net/projects/mplib
 
@@ -45,7 +45,7 @@ easy to use, because I think the reading a artist name from a mp3 file
 should really not be a big deal.
 
 Enjoy mplib and send me some feedback,
-Stefan Podkowinski (spod), lugburg@netscape.net
+Stefan Podkowinski (spod), s.podkowinski@gmail.com 
 
 
 URL's:
