@@ -1,7 +1,8 @@
 /*
  * mplib - a library that enables you to edit ID3 tags
  *
- * Copyright (c) 2001,2002,2003,2004,2005 Stefan Podkowinski
+ * Copyright (c) 2001,2002,2003,2004,2005,2006 Stefan Podkowinski
+ *               2006                          Michal Kowalczuk
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without 
@@ -141,9 +142,18 @@
 		 i = 1;
 	 }
 	 
-	 cc->text = xmallocd(content->length - 4 - i + 1, "mp_parse_comment:cc->text");
-	 memcpy(cc->text, content->data + 4 + i, content->length - 4 - i);
-	 cc->text[content->length - 4 - i] = 0;
+	 if((int)(content->length - 4 - i) > 0)
+	 {
+		 cc->text = xmallocd(content->length - 4 - i + 1, "mp_parse_comment:cc->text");
+		 memcpy(cc->text, content->data + 4 + i, content->length - 4 - i);
+		 cc->text[content->length - 4 - i] = 0;
+	 }
+	 else
+	 {
+		 cc->text = NULL;
+		 mp_free_comment_content(cc);
+		 cc = NULL;
+	 }
 	 
 	 return cc;
  }
