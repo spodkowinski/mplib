@@ -715,6 +715,7 @@ id3v2_get_tag(size_t (*read_func)(void *, size_t, void *),
 	while(lseek_func(0L, SEEK_CUR, arg) < header->total_tag_size)
 	{
 		int hasEnc = 0, hasLang = 0, d;
+  		unsigned int data_size;
 		
 		read_func(c, 10, arg); /* Read header */
 		
@@ -724,10 +725,15 @@ id3v2_get_tag(size_t (*read_func)(void *, size_t, void *),
 		/* Check if possible id is alpha numeric */
 		if(!isalnum(c[0]) || !isalnum(c[1]) || !isalnum(c[2]) || !isalnum(c[3])) break;
 		
+		data_size = id3_unsync32(c, 4);
+
+		/* Check if data_size hasn't impossible value */
+		if (data_size > header->total_tag_size) break;
+		
 		frame = XMALLOCD(id3v2_frame, "id3v2_get_tag:frame");
 		frame->frame_id = xmallocd(4, "id3v2_get_tag:frame->frame_id");
 		strncpy(frame->frame_id, c, 4);
-		frame->data_size = id3_unsync32(c, 4);
+		frame->data_size = data_size;
 		frame->status_flag = c[8];
 		frame->format_flag = c[9];
 		
@@ -745,6 +751,7 @@ id3v2_get_tag(size_t (*read_func)(void *, size_t, void *),
 		}
 		frame_list->data = frame;
 	}
+	
 	
 	xfree(c);
 	return tag;
@@ -1186,8 +1193,8 @@ id3v2_free_tag(id3v2_tag* v2)
 		{
 			if(frame->frame_id) xfree(frame->frame_id);
 			if(frame->data) xfree(frame->data);
-			xfree(v2->frame_list->data);
 		}
+		xfree(v2->frame_list->data);
 
 		doomed = v2->frame_list->next;
 		xfree(v2->frame_list);
@@ -1209,6 +1216,8 @@ size_t read_mem(void *dest, size_t nbytes, void *varg) {
 	} else {
 		count = arg->size - (arg->act - arg->buf);
 		memcpy(dest, arg->act, count);
+		arg->act += count;
+
 		return count;
 	}
 }
