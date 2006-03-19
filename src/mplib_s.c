@@ -508,7 +508,7 @@ id3v2_del_tag(int fd, id3v2_tag *t)
 	FILE *file, *tmp;
 	int read;
 	void *ptr;
-	id3v2_tag *tfound = NULL;;
+	id3v2_tag *tfound = NULL;
 	file_arg arg;
 	
 	if(!t)
