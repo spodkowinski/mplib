@@ -234,18 +234,25 @@ mp_get_tag_list_from_file(const char* filename)
 {
 	id3_tag_list *ret;
 	int fd;
-	file_arg arg;
 	
 	if(!filename) return NULL;
 	
 	fd = open(filename, O_RDONLY);
 	if(fd == -1) return NULL;
-	
-	arg.fd = fd;
-	ret = mp_get_tag_list(read_file, lseek_file, &arg);
+    
+	ret = mp_get_tag_list_from_fd(fd);
+    
 	close(fd);
 	return ret;
+}
 
+id3_tag_list* 
+mp_get_tag_list_from_fd(int fd)
+{
+    file_arg arg;
+    
+    arg.fd = fd;
+    return mp_get_tag_list(read_file, lseek_file, &arg);
 }
 
 id3_tag_list* 

@@ -317,6 +317,18 @@ extern char *mp_get_str_mode __P((const mpeg_header*));
 extern id3_tag_list* mp_get_tag_list_from_file __P((const char* path));
 
 /** 
+ * Allocates and fills a list of tags found in the given file. This list
+ * will contain at least one and at most two tags or is NULL if no tags
+ * have been found.
+ * This function prepares argument and calls mp_get_tag_list() function.
+ * @param fd                The file descriptor
+ * @return                  A pointer to a initialized list struct or null if no tags 
+ *                          have been found
+ */
+extern id3_tag_list* mp_get_tag_list_from_fd __P((int fd));
+
+
+/** 
  * Allocates and fills a list of tags found in the given memory buffer. This
  * list will contain at least one and at most two tags or is NULL if no tags
  * have been found.
