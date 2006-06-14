@@ -75,7 +75,7 @@
 	 
 	 if(!filename) return NULL;
 	 
-	 fd = open(filename, O_RDONLY);
+	 fd = open(filename, O_RDONLY | O_BINARY);
 	 if(fd == -1) return NULL;
 	 
 	 ret = mp_get_mpeg_header_from_fd(fd);
@@ -237,7 +237,7 @@ mp_get_tag_list_from_file(const char* filename)
 	
 	if(!filename) return NULL;
 	
-	fd = open(filename, O_RDONLY);
+	fd = open(filename, O_RDONLY | O_BINARY);
 	if(fd == -1) return NULL;
     
 	ret = mp_get_tag_list_from_fd(fd);
@@ -615,7 +615,7 @@ mp_set_custom_content_at_pos(id3_tag* tag, char* field, id3_content* new_content
 	 
 	 if(!filename) return MP_EERROR;
 	 
-	 fd = open(filename, O_RDWR);
+	 fd = open(filename, O_RDWR | O_BINARY);
 	 if(fd == -1) return MP_EERROR;
 	 
 	 ret = mp_write_to_fd(tag_list, fd);
@@ -711,7 +711,7 @@ mp_del_tags_from_file(const char* filename)
 	
 	if(!filename) return 1;
 	
-	fd = open(filename, O_RDWR);
+	fd = open(filename, O_RDWR | O_BINARY);
 	if(fd == -1) return 1;
 	
 	ret = mp_del_tags_from_fd(fd);
@@ -737,7 +737,7 @@ mp_del_tags_by_ver_from_file(const char* filename, const int version)
 	
 	if(!filename) return 1;
 	
-	fd = open(filename, O_RDWR);
+	fd = open(filename, O_RDWR | O_BINARY);
 	if(fd == -1) return 1;
 	
 	ret = mp_del_tags_by_ver_from_fd(fd, version);
